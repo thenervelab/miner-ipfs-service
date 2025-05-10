@@ -1,0 +1,4 @@
+aiohttp
+substrate-interface
+aiosqlite
+coloredlogs # For colored logging output 
