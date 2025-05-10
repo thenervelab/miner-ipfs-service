@@ -20,7 +20,7 @@ This service acts as an IPFS miner for the Dubs Subnet. It interacts with a Subs
 
 1.  **Python**: Python 3.9 or higher is recommended.
 2.  **IPFS Daemon**: A local IPFS Kubo daemon must be running and accessible via its HTTP API (default: `127.0.0.1:5001`).
-3.  **Substrate Node**: Access to a Substrate node for the Dubs Subnet. The service can be configured to point to a development node (e.g., `wss://rpc.hippius.network`) or a local/production node.
+3.  **Substrate Node**: Access to a Substrate node for the Dubs Subnet. The service can be configured to point to a development node (e.g., `ws://127.0.0.1:9944`) or a local/production node.
 
 ## Setup
 
@@ -58,7 +58,7 @@ API_PORT = 5001
 [Substrate]
 # Default to development node. For production, change this to ws://127.0.0.1:9944
 # or use the SUBSTRATE_NODE_URL environment variable.
-NODE_URL = wss://rpc.hippius.network
+NODE_URL = ws://127.0.0.1:9944
 
 [Database]
 NAME = miner_data.db
