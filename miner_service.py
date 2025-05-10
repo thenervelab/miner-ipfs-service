@@ -414,6 +414,7 @@ async def main_loop():
 if __name__ == "__main__":
     # Print ASCII Art First
     print(HIPPIUS_ASCII_ART)
+    print(f"Hippius IPFS Miner Service - Version: {config_manager.APP_VERSION}\n") # Print version
 
     # Configure logging first using config_manager
     log_level_str = config_manager.LOG_LEVEL.upper()

@@ -3,6 +3,38 @@ import os
 import logging
 
 CONFIG_FILE_PATH = 'config.ini'
+VERSION_FILE_PATH = '__version__.py' # Path to the version file
+
+# Function to read the version from __version__.py
+def get_application_version():
+    version = "unknown"
+    version_file = os.path.join(os.path.dirname(__file__), VERSION_FILE_PATH) # Ensure correct path relative to config_manager.py
+    if not os.path.exists(version_file):
+        # If running from a different working directory, try relative to CWD as a fallback for simple scripts
+        # This might be needed if the script isn't run with the project root as CWD.
+        # However, for a structured project, relative to __file__ is more robust.
+        alt_version_file = os.path.abspath(VERSION_FILE_PATH)
+        if os.path.exists(alt_version_file):
+            version_file = alt_version_file
+        else:
+            logging.warning(f"Version file '{version_file}' (and '{alt_version_file}') not found.")
+            return version
+            
+    try:
+        with open(version_file, 'r') as f:
+            for line in f:
+                if line.startswith('__version__'):
+                    # Execute the line in a restricted scope to get the value
+                    # This is safer than direct exec() if the file could be complex,
+                    # but for a simple __version__ = "x.y.z" it's okay.
+                    # A more robust way might be to parse it with ast.
+                    local_vars = {}
+                    exec(line, {}, local_vars)
+                    version = local_vars.get('__version__', version)
+                    break
+    except Exception as e:
+        logging.error(f"Could not read version from {version_file}: {e}")
+    return version
 
 class ConfigManager:
     def __init__(self, config_file=CONFIG_FILE_PATH):
@@ -59,6 +91,9 @@ class ConfigManager:
 # Create a single instance to be imported by other modules
 config = ConfigManager()
 
+# Application version
+APP_VERSION = get_application_version()
+
 # Example of how to define specific config properties for easy access
 LOG_LEVEL = config.get('General', 'LOG_LEVEL', default='INFO', env_var='LOG_LEVEL')
 
@@ -77,6 +112,7 @@ GC_TRIGGER_INTERVAL_LOOPS = config.get('MinerService', 'GC_TRIGGER_INTERVAL_LOOP
 if __name__ == '__main__':
     # Test the config manager
     logging.basicConfig(level=LOG_LEVEL)
+    logging.info(f"Application Version: {APP_VERSION}")
     logging.info(f"Log Level: {LOG_LEVEL}")
     logging.info(f"IPFS API Host: {IPFS_API_HOST}")
     logging.info(f"IPFS API Port: {IPFS_API_PORT}")
