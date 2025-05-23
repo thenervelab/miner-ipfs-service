@@ -85,25 +85,22 @@ def decode_profile_file_hash_to_cid(file_hash_array: list[int]) -> str | None:
         return None
 
 async def get_self_ipfs_node_id():
-    """Fetches and returns the local IPFS daemon's Node ID."""
+    """Fetches and returns the node ID from the Substrate node instead of the IPFS daemon."""
     global MY_IPFS_NODE_ID
     if MY_IPFS_NODE_ID:
         return MY_IPFS_NODE_ID
     try:
-        # Old way using ipfshttpclient structure:
-        # async with await ipfs_utils.get_ipfs_client() as client:
-        #     node_info = await client.id()
-        # New way using aiohttp direct call:
-        node_info = await ipfs_utils.get_ipfs_id()
-        if node_info and node_info.get('ID'):
-            MY_IPFS_NODE_ID = node_info.get('ID')
-            logging.info(f"Successfully fetched own IPFS Node ID: {MY_IPFS_NODE_ID}")
+        # Get node ID from the Substrate node instead of IPFS
+        node_id = await substrate_interface.get_substrate_node_id()
+        if node_id:
+            MY_IPFS_NODE_ID = node_id
+            logging.info(f"Successfully fetched node ID from Substrate: {MY_IPFS_NODE_ID}")
             return MY_IPFS_NODE_ID
         else:
-            logging.error(f"Could not determine own IPFS Node ID from daemon. Response: {node_info}")
+            logging.error("Could not determine node ID from Substrate node.")
             return None
     except Exception as e:
-        logging.error(f"Error fetching own IPFS Node ID: {e}", exc_info=True)
+        logging.error(f"Error fetching node ID from Substrate: {e}", exc_info=True)
         return None
 
 async def fetch_and_process_profile(is_startup: bool = False):

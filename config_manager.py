@@ -100,7 +100,7 @@ LOG_LEVEL = config.get('General', 'LOG_LEVEL', default='INFO', env_var='LOG_LEVE
 IPFS_API_HOST = config.get('IPFS', 'API_HOST', default='127.0.0.1', env_var='IPFS_API_HOST')
 IPFS_API_PORT = config.get('IPFS', 'API_PORT', default=5001, is_int=True, env_var='IPFS_API_PORT')
 
-SUBSTRATE_NODE_URL = config.get('Substrate', 'NODE_URL', default='wss://rpc.hippius.network', env_var='SUBSTRATE_NODE_URL')
+SUBSTRATE_NODE_URL = config.get('Substrate', 'NODE_URL', default='ws://127.0.0.1:9944', env_var='SUBSTRATE_NODE_URL')
 
 DATABASE_NAME = config.get('Database', 'NAME', default='miner_data.db', env_var='DATABASE_NAME')
 

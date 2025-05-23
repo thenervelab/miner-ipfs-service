@@ -130,6 +130,34 @@ async def get_miner_profile_cid(ipfs_node_id: str) -> str | None:
     
     return profile_cid_str
 
+async def get_substrate_node_id() -> str | None:
+    """Fetches the node ID from the Substrate node."""
+    substrate = get_substrate_connection()
+    if not substrate:
+        logging.error("Failed to get substrate connection for fetching node ID.")
+        return None
+
+    node_id = None
+    try:
+        # Query the system for node information
+        response = substrate.rpc_request(method="system_nodeId", params=[])
+        if response and "result" in response:
+            node_id = response["result"]
+            logging.info(f"Successfully fetched Substrate node ID: {node_id}")
+            return node_id
+        else:
+            logging.warning(f"Could not retrieve node ID. Response: {response}")
+    except SubstrateRequestException as e:
+        logging.error(f"Substrate request failed when fetching node ID: {e}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred when fetching node ID: {e}", exc_info=True)
+    finally:
+        if substrate:
+            try: substrate.close()
+            except: pass
+            logging.debug("Substrate connection closed after fetching node ID.")
+    return node_id
+
 async def get_current_block_number() -> int | None:
     """Fetches the current (latest) block number of the Substrate chain."""
     substrate = get_substrate_connection()
