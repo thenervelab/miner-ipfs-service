@@ -48,10 +48,19 @@ def get_substrate_connection() -> SubstrateInterface | None:
 def decode_hex_bytes_to_cid_string(hex_bytes_value: str) -> str | None:
     """Decodes a hex string (potentially '0x' prefixed) from the chain.
        Assumes the hex string is the hexadecimal representation of the UTF-8 encoded CID string.
+       Also handles cases where the value is already a CID.
     """
     if not hex_bytes_value:
         logging.warning("Received empty hex_bytes_value for decoding.")
         return None
+    
+    # First check if the input is already a valid CID format
+    if (hex_bytes_value.startswith('Qm') and len(hex_bytes_value) == 46) or \
+       (hex_bytes_value.startswith('bafy') and len(hex_bytes_value) > 50) or \
+       (hex_bytes_value.startswith('bafk') and len(hex_bytes_value) > 50) or \
+       (hex_bytes_value.startswith('k') and len(hex_bytes_value) > 50):
+        logging.info(f"Input value '{hex_bytes_value}' is already in CID format. Using as is.")
+        return hex_bytes_value
     
     cleaned_hex = hex_bytes_value.lower()
     if cleaned_hex.startswith('0x'):
@@ -66,6 +75,7 @@ def decode_hex_bytes_to_cid_string(hex_bytes_value: str) -> str | None:
         cid_candidate = cid_bytes.decode('utf-8')
         if (cid_candidate.startswith('Qm') and len(cid_candidate) == 46) or \
            (cid_candidate.startswith('bafy') and len(cid_candidate) > 50) or \
+           (cid_candidate.startswith('bafk') and len(cid_candidate) > 50) or \
            (cid_candidate.startswith('k') and len(cid_candidate) > 50):
             logging.debug(f"Successfully decoded hex '{hex_bytes_value}' to CID string: '{cid_candidate}'")
             return cid_candidate
@@ -80,7 +90,8 @@ def decode_hex_bytes_to_cid_string(hex_bytes_value: str) -> str | None:
             return cleaned_hex
         elif (hex_bytes_value.startswith('Qm') and len(hex_bytes_value) == 46) or \
              (hex_bytes_value.startswith('bafy') and len(hex_bytes_value) > 50) or \
-             (hex_bytes_value.startswith('k') and len(hex_bytes_value) > 50) :
+             (hex_bytes_value.startswith('bafk') and len(hex_bytes_value) > 50) or \
+             (hex_bytes_value.startswith('k') and len(hex_bytes_value) > 50):
             logging.warning(f"Treating input '{hex_bytes_value}' as a direct CID string as hex decoding failed.")
             return hex_bytes_value
         logging.error(f"Invalid hex string for CID decoding and not a direct CID: '{hex_bytes_value}'.")
