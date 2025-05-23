@@ -139,8 +139,8 @@ async def get_substrate_node_id() -> str | None:
 
     node_id = None
     try:
-        # Query the system for node information
-        response = substrate.rpc_request(method="system_nodeId", params=[])
+        # Query the system for node information using the correct method system_localPeerId
+        response = substrate.rpc_request(method="system_localPeerId", params=[])
         if response and "result" in response:
             node_id = response["result"]
             logging.info(f"Successfully fetched Substrate node ID: {node_id}")
