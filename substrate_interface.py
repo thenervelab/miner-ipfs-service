@@ -18,32 +18,41 @@ import asyncio
 # SUBSTRATE_URL = SUBSTRATE_NODE_URL # This line is redundant as SUBSTRATE_NODE_URL is already the correct value
 
 def get_substrate_connection() -> SubstrateInterface | None:
-    """Establishes and returns a connection to the Substrate node.
-       This simplified version relies on the constructor to succeed or fail clearly.
+    """Establishes and returns a verified connection to the Substrate node with infinite retries.
+
+    Retries every 5 seconds on failure until a successful connection is verified by querying the chain head.
+
+    Returns:
+        SubstrateInterface | None: A verified SubstrateInterface instance or None if connection cannot be verified.
     """
     substrate = None
-    try:
-        logging.info(f"Attempting to connect to Substrate node at {SUBSTRATE_NODE_URL}...")
-        substrate = SubstrateInterface(
-            url=SUBSTRATE_NODE_URL
-        )
-        # We won't try to access attributes like node_name or genesis_hash here anymore
-        # as they were causing AttributeErrors, implying the object might be partially formed
-        # but still potentially usable for direct queries if the WS connection itself is okay.
-        logging.info(f"SubstrateInterface object created for {SUBSTRATE_NODE_URL}. Connection assumed for query attempt.")
-        return substrate
-    except ConnectionRefusedError:
-        logging.error(f"Connection refused when connecting to Substrate node at {SUBSTRATE_NODE_URL}.")
-    except SubstrateRequestException as e: 
-        logging.error(f"Substrate request exception during SubstrateInterface init for {SUBSTRATE_NODE_URL}: {e}")
-    except Exception as e:
-        logging.error(f"General error creating SubstrateInterface for {SUBSTRATE_NODE_URL}: {e}", exc_info=True)
-    
-    # If substrate object exists but an error occurred, try to close, though it might also fail.
-    if substrate:
-        try: substrate.close()
-        except: pass
-    return None
+    attempt = 1
+
+    while True:
+        try:
+            logging.info(f"Attempt {attempt} to connect to Substrate node at {SUBSTRATE_NODE_URL}...")
+            substrate = SubstrateInterface(url=SUBSTRATE_NODE_URL)
+            # Verify connection by attempting a simple query
+            substrate.get_chain_head()
+            logging.info(f"Successfully connected to {SUBSTRATE_NODE_URL} and verified with chain head query.")
+            return substrate
+
+        except (ConnectionRefusedError, SubstrateRequestException, BrokenPipeError) as e:
+            logging.error(f"Connection error when connecting to Substrate node at {SUBSTRATE_NODE_URL} on attempt {attempt}: {e}")
+        except Exception as e:
+            logging.error(f"General error creating or verifying SubstrateInterface for {SUBSTRATE_NODE_URL} on attempt {attempt}: {e}", exc_info=True)
+
+        # Clean up if substrate object was partially created
+        if substrate:
+            try:
+                substrate.close()
+            except:
+                pass
+            substrate = None
+
+        logging.info("Waiting 5 seconds before retrying...")
+        time.sleep(5)
+        attempt += 1
 
 def decode_hex_bytes_to_cid_string(hex_bytes_value: str) -> str | None:
     """Decodes a hex string (potentially '0x' prefixed) from the chain.

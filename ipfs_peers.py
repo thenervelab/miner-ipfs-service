@@ -25,15 +25,20 @@ class PeersConnector:
         self.ipfs_api_url = "http://127.0.0.1:5001"
 
     async def connect(self):
-        """Establish connection to the Substrate node."""
-        try:
-            print("Connecting...")
-            self.substrate = SubstrateInterface(url=self.ws_url)
-            print(f"Connected to Substrate node at {self.ws_url}")
-        except Exception as e:
-            print(f"Failed to connect to Substrate node: {e}")
-            raise
-
+            """Establish connection to the Substrate node with retries."""
+            while True:
+                try:
+                    print("Connecting...")
+                    self.substrate = await asyncio.to_thread(SubstrateInterface, url=self.ws_url)
+                    print(f"Connected to Substrate node at {self.ws_url}")
+                    return  # Exit the loop on success
+                except (ConnectionRefusedError, SubstrateRequestException, BrokenPipeError) as e:
+                    print(f"Connection attempt failed: {e}")
+                    await asyncio.sleep(5)  # Wait 5 seconds before retrying
+                except Exception as e:
+                    print(f"Unexpected error: {e}")
+                    await asyncio.sleep(5)  # Wait 5 seconds before retrying
+                    
     async def query_storage_map(self, block_hash, pallet, storage_function):
         """
         Query a storage map from a pallet at a specific block hash.
@@ -65,7 +70,7 @@ class PeersConnector:
             print(f"Error querying {pallet}.{storage_function}: {e}")
             return []
 
-    async def add_peer_and_pin_cid(self, session, peer_id):
+    async def add_peers(self, session, peer_id):
         """
         Connects to a peer using the local IPFS node API with a timeout.
         
@@ -100,7 +105,7 @@ class PeersConnector:
             for i in range(0, len(peer_ids), self.batch_size):
                 batch = peer_ids[i:i + self.batch_size]
                 print(f"Processing batch of {len(batch)} peers")
-                tasks = [self.add_peer_and_pin_cid(session, peer_id) for peer_id in batch]
+                tasks = [self.add_peers(session, peer_id) for peer_id in batch]
                 results = await asyncio.gather(*tasks)
                 for result in results:
                     if "peer_connection" in result:
