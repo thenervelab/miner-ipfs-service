@@ -11,6 +11,7 @@ import db_manager
 import ipfs_utils
 import substrate_interface
 import config_manager # Import the whole module to access its pre-defined config variables
+from ipfs_peers import PeersConnector
 
 # Configuration values are now accessed via config_manager.VARIABLE_NAME
 # POLLING_INTERVAL_SECONDS = int(os.environ.get("POLLING_INTERVAL_SECONDS", 60))
@@ -485,6 +486,11 @@ if __name__ == "__main__":
         except Exception as e_cleanup:
             logging.error(f"Error during startup IPFS cleanup: {e_cleanup}", exc_info=True)
         
+        # connect existing all peers in registration pallet with local ipfs node  
+        ws_url = config_manager.SUBSTRATE_WS_URL if hasattr(config_manager, 'SUBSTRATE_WS_URL') else "wss://hippius-testnet.starkleytech.com"
+        peer_connector = PeersConnector(ws_url=ws_url, block_interval=20, batch_size=10, batch_interval=2, connect_timeout=10)
+        asyncio.create_task(peer_connector.run())
+
         logging.info("Processing initial profile with fetch_and_process_profile to set DB state...")
         await fetch_and_process_profile(is_startup=True) # block_hash will be None here
 
