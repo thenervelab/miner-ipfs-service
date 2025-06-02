@@ -487,7 +487,7 @@ if __name__ == "__main__":
             logging.error(f"Error during startup IPFS cleanup: {e_cleanup}", exc_info=True)
         
         # connect existing all peers in registration pallet with local ipfs node  
-        ws_url = config_manager.SUBSTRATE_WS_URL if hasattr(config_manager, 'SUBSTRATE_WS_URL') else "wss://hippius-testnet.starkleytech.com"
+        ws_url = config_manager.SUBSTRATE_WS_URL if hasattr(config_manager, 'SUBSTRATE_WS_URL') else "ws://127.0.0.1:9944"
         peer_connector = PeersConnector(ws_url=ws_url, block_interval=20, batch_size=10, batch_interval=2, connect_timeout=10)
         asyncio.create_task(peer_connector.run())
 
@@ -511,3 +511,7 @@ if __name__ == "__main__":
         logging.critical(f"Global unhandled exception in miner service: {e_global}", exc_info=True)
     finally:
         logging.info("Miner service shutdown sequence finished.") # Changed from loop.close as asyncio.run handles it. 
+        # Cancel all running tasks except current
+        for task in asyncio.all_tasks():
+            if task is not asyncio.current_task():
+                task.cancel()

@@ -186,7 +186,7 @@ class PeersConnector:
 
 async def main():
     """Entry point for the application."""
-    ws_url = "wss://hippius-testnet.starkleytech.com"  # Replace with your node's WebSocket URL
+    ws_url = "ws://127.0.0.1:9944"
     peer_connector = PeersConnector(ws_url, block_interval=20, batch_size=10, batch_interval=2, connect_timeout=10)
     await peer_connector.run()
 
