@@ -11,10 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      id-token: write
-      packages: write
-      issues: write
-      pull-requests: write
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     
@@ -22,7 +18,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Ensure full history for changelog generation
+        fetch-depth: 0  
 
     - name: Get version from tag
       id: get_version
@@ -31,7 +27,6 @@ jobs:
     - name: Generate changelog
       id: changelog
       run: |
-        # Use git log to generate a simple changelog since last tag
         git fetch --tags
         PREVIOUS_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 2 | tail -n 1)
         if [ -z "$PREVIOUS_TAG" ]; then
@@ -46,12 +41,10 @@ jobs:
 
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
+        tag_name: ${{ github.ref }}
+        name: Release ${{ github.ref_name }}
         body: |
           Release ${{ github.ref_name }}
 
@@ -66,8 +59,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
-    
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -100,4 +91,4 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-        skip-existing: true
+        skip_existing: true 
