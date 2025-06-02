@@ -2,7 +2,7 @@ name: Publish to TestPyPI
 
 on:
   push:
-    branches: [ dev, develop, development ]
+    branches: [ dev, develop, feature/add-peers ]
   workflow_dispatch:
 
 jobs:
