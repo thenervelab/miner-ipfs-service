@@ -266,5 +266,20 @@ async def main_test_substrate():
     else:
         logging.error("Failed to fetch current block number in test.")
 
+
+# In substrate_interface.py (or wherever substrate_interface is defined)
+async def reconnect():
+    global substrate
+    substrate = None
+    while True:
+        try:
+            substrate = await asyncio.to_thread(SubstrateInterface, url="ws://127.0.0.1:9944")
+            logging.info("Reconnected to Substrate node.")
+            break
+        except Exception as e:
+            logging.error(f"Reconnection failed: {e}")
+            await asyncio.sleep(5)
+
 if __name__ == "__main__":
     asyncio.run(main_test_substrate()) 
+

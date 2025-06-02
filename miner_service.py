@@ -403,6 +403,10 @@ async def main_loop():
                 await ipfs_utils.trigger_garbage_collection()
                 gc_counter = 0
 
+        except BrokenPipeError as e:
+            logging.error(f"Broken pipe error in main loop: {e}. Attempting to reconnect to Substrate node.")
+            await substrate_interface.reconnect()  # Ensure substrate_interface has a reconnect method or implement one
+            await asyncio.sleep(5)  # Wait before retrying
         except Exception as e:
             logging.error(f"Unhandled error in main processing loop: {e}", exc_info=True)
         
