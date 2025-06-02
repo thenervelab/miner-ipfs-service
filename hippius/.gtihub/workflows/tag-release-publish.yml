@@ -1,0 +1,105 @@
+```yaml
+name: Tag to Release and Publish
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on tags like v0.1.0
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
+      issues: write
+      pull-requests: write
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Ensure full history for changelog generation
+
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Use git log to generate a simple changelog since last tag
+        git fetch --tags
+        PREVIOUS_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 2 | tail -n 1)
+        if [ -z "$PREVIOUS_TAG" ]; then
+          CHANGELOG=$(git log --pretty="* %s (%h)" --no-merges)
+        else
+          CHANGELOG=$(git log $PREVIOUS_TAG..HEAD --pretty="* %s (%h)" --no-merges)
+        fi
+        echo "$CHANGELOG" > changelog.md
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat changelog.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        body: |
+          Release ${{ github.ref_name }}
+
+          Changes in this release:
+          ${{ steps.changelog.outputs.changelog }}
+        draft: false
+        prerelease: false
+
+  build-and-publish:
+    name: Build and Publish to PyPI
+    needs: create-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.3
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    - name: Install dependencies
+      run: |
+        poetry install
+    - name: Verify version in pyproject.toml
+      run: |
+        VERSION=$(poetry version -s)
+        TAG_VERSION=${{ github.ref_name }}
+        TAG_VERSION=${TAG_VERSION#v}  # Remove 'v' prefix
+        if [ "$VERSION" != "$TAG_VERSION" ]; then
+          echo "Error: pyproject.toml version ($VERSION) does not match tag version ($TAG_VERSION)"
+          exit 1
+        fi
+    - name: Build package
+      run: |
+        poetry build
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        skip-existing: true
+```

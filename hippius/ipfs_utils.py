@@ -4,7 +4,7 @@ import aiohttp # Changed from ipfshttpclient
 import json # Already imported in previous version for get_json_from_cid
 import logging
 import os
-from config_manager import IPFS_API_HOST, IPFS_API_PORT
+from .config_manager import IPFS_API_HOST, IPFS_API_PORT
 
 # Construct the base URL for IPFS API calls
 IPFS_API_BASE_URL = f"http://{IPFS_API_HOST}:{IPFS_API_PORT}/api/v0"

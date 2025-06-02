@@ -109,6 +109,12 @@ MAX_PIN_RETRIES = config.get('MinerService', 'MAX_PIN_RETRIES', default=5, is_in
 UNPINNABLE_CIDS_REPORT_FILE = config.get('MinerService', 'UNPINNABLE_CIDS_REPORT_FILE', default='unpinnable_cids_report.json', env_var='UNPINNABLE_CIDS_REPORT_FILE')
 GC_TRIGGER_INTERVAL_LOOPS = config.get('MinerService', 'GC_TRIGGER_INTERVAL_LOOPS', default=10, is_int=True, env_var='GC_TRIGGER_INTERVAL_LOOPS')
 
+# Version checking configurations
+PYPI_URL = os.environ.get("PYPI_URL", "https://pypi.org/pypi/hippius/json")  # Production PyPI
+TEST_PYPI_URL = os.environ.get("TEST_PYPI_URL", "https://test.pypi.org/pypi/hippius/json")  # TestPyPI
+VERSION_CHECK_INTERVAL_SECONDS = int(os.environ.get("VERSION_CHECK_INTERVAL_SECONDS", 3600))  # Check every hour
+USE_TEST_PYPI = os.environ.get("USE_TEST_PYPI", "false").lower() == "true"  # Default to production PyPI
+
 if __name__ == '__main__':
     # Test the config manager
     logging.basicConfig(level=LOG_LEVEL)

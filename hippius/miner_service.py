@@ -6,14 +6,12 @@ import os
 import time
 import binascii # Added for hex decoding
 import coloredlogs # Import coloredlogs
-
-import db_manager
-import ipfs_utils
-import substrate_interface
-import config_manager # Import the whole module to access its pre-defined config variables
-from ipfs_peers import PeersConnector
-from version_checker import check_for_updates
-
+from packaging import version as pkg_version
+from . import db_manager
+from . import ipfs_utils
+from . import substrate_interface
+from . import config_manager
+from .ipfs_peers import PeersConnector
 
 # Configuration values are now accessed via config_manager.VARIABLE_NAME
 # POLLING_INTERVAL_SECONDS = int(os.environ.get("POLLING_INTERVAL_SECONDS", 60))
@@ -22,6 +20,49 @@ from version_checker import check_for_updates
 
 # Get own IPFS Node ID - this is crucial for querying the correct profile
 MY_IPFS_NODE_ID = None # Will be fetched at startup
+last_version_check = 0
+
+async def check_for_updates():
+    """Check PyPI for the latest package version and notify if an update is available."""
+    global last_version_check
+    current_time = time.time()
+    
+    # Only check if enough time has passed
+    if current_time - last_version_check < config_manager.VERSION_CHECK_INTERVAL_SECONDS:
+        return
+    
+    try:
+        # Get current version
+        try:
+            current_version = version("hippius")
+        except PackageNotFoundError:
+            logging.error("Could not determine current Hippius version. Ensure package is installed correctly.")
+            return
+
+        # Determine which PyPI to query
+        pypi_url = config_manager.TEST_PYPI_URL if config_manager.USE_TEST_PYPI else config_manager.PYPI_URL
+        logging.debug(f"Checking for updates at {pypi_url}")
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(pypi_url, timeout=10) as response:
+                if response.status != 200:
+                    logging.warning(f"Failed to fetch package info from {pypi_url}: HTTP {response.status}")
+                    return
+                data = await response.json()
+                latest_version = data["info"]["version"]
+                
+                if pkg_version.parse(latest_version) > pkg_version.parse(current_version):
+                    logging.warning(
+                        f"New version {latest_version} available (current: {current_version}). "
+                        f"Update with: pip install --upgrade hippius{' --index-url https://test.pypi.org/simple/' if config_manager.USE_TEST_PYPI else ''}"
+                    )
+                else:
+                    logging.debug(f"Hippius is up to date (current: {current_version}, latest: {latest_version})")
+                
+        last_version_check = current_time
+    except Exception as e:
+        logging.error(f"Error checking for updates: {e}", exc_info=True)
+
 
 HIPPIUS_ASCII_ART = """
 HHHHHHHHH     HHHHHHHHHIIIIIIIIII PPPPPPPPPPPPPPPPP   PPPPPPPPPPPPPPPPP   IIIIIIIIIIUUUUUUUU     UUUUUUUU   SSSSSSSSSSSSSSS 
@@ -390,9 +431,10 @@ async def main_loop():
             
         logging.debug("Main loop iteration starting (profile poll, pin processing, reconciliation, GC check).")
         try:
+
             # Poll for profile updates
             await fetch_and_process_profile()
-            
+            await check_for_updates()            
             await process_pending_pins()
             await process_failed_pins()
             await process_unpin_requests()
@@ -444,6 +486,7 @@ if __name__ == "__main__":
         await db_manager.initialize_database()
         logging.info("Database initialized.")
 
+        # Check for updates at startup
         await check_for_updates()
 
         # --- Aggressive Startup Cleanup & Pinning ---

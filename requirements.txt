@@ -3,3 +3,5 @@ substrate-interface
 aiosqlite
 coloredlogs
 setuptools
+packaging
+poetry

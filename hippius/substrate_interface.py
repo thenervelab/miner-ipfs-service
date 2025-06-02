@@ -4,7 +4,7 @@ from substrateinterface import SubstrateInterface, Keypair
 from substrateinterface.exceptions import SubstrateRequestException
 import os
 import binascii
-from config_manager import SUBSTRATE_NODE_URL
+from .config_manager import SUBSTRATE_NODE_URL
 import asyncio
 
 # Configuration

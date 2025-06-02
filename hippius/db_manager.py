@@ -1,8 +1,7 @@
 # Database management functions
 import aiosqlite
 import logging
-# import config_manager # This will be the new way
-from config_manager import DATABASE_NAME # Directly import the specific config
+from .config_manager import DATABASE_NAME
 
 # DATABASE_NAME = "miner_data.db" # Old way
 
