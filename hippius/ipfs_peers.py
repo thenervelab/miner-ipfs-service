@@ -99,57 +99,65 @@ class PeersConnector:
         """
         connect_url = f"{self.ipfs_api_url}/api/v0/swarm/connect"
         params = {"arg": f"/p2p/{peer_id}"}
-        
+
         try:
             async with session.post(
                 connect_url, params=params, timeout=self.connect_timeout
             ) as response:
                 result = await response.json()
-                
+
                 # Successful connection
-                if isinstance(result, dict) and "Strings" in result and any("success" in s for s in result["Strings"]):
+                if (
+                    isinstance(result, dict)
+                    and "Strings" in result
+                    and any("success" in s for s in result["Strings"])
+                ):
                     return {"success": f"connect {peer_id} success", "result": result}
-                
+
                 # Routing not found error (common in IPFS)
-                if isinstance(result, dict) and "Message" in result and "routing: not found" in result["Message"]:
+                if (
+                    isinstance(result, dict)
+                    and "Message" in result
+                    and "routing: not found" in result["Message"]
+                ):
                     return {
                         "error": f"connect {peer_id} failure: routing not found",
                         "type": "routing_error",
-                        "details": result
+                        "details": result,
                     }
-                
+
                 # Other IPFS API errors
                 if isinstance(result, dict) and "error" in result:
                     return {
                         "error": f"Failed to connect to peer {peer_id}: {result['error']}",
                         "type": "api_error",
-                        "details": result
+                        "details": result,
                     }
-                
+
                 # Unknown response format
                 return {
                     "error": f"Unexpected response format when connecting to {peer_id}",
                     "type": "unexpected_format",
-                    "details": result
+                    "details": result,
                 }
-                
+
         except asyncio.TimeoutError:
             return {
                 "error": f"Timeout connecting to peer {peer_id}",
                 "type": "timeout",
-                "details": f"Operation exceeded {self.connect_timeout} seconds"
+                "details": f"Operation exceeded {self.connect_timeout} seconds",
             }
         except aiohttp.ClientError as e:
             return {
                 "error": f"Network error connecting to peer {peer_id}: {str(e)}",
                 "type": "network_error",
-                "details": str(e)
+                "details": str(e),
             }
         except Exception as e:
             return {
                 "error": f"Unexpected error connecting to peer {peer_id}: {str(e)}",
                 "type": "unexpected_error",
-                "details": str(e)
+                "details": str(e),
             }
 
     async def process_peers_in_batches(self, peer_ids):
