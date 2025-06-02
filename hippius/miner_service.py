@@ -6,7 +6,9 @@ import os
 import time
 import binascii # Added for hex decoding
 import coloredlogs # Import coloredlogs
+import aiohttp
 from packaging import version as pkg_version
+from importlib.metadata import version, PackageNotFoundError
 from . import db_manager
 from . import ipfs_utils
 from . import substrate_interface
@@ -35,7 +37,7 @@ async def check_for_updates():
         # Get current version
         try:
             current_version = version("hippius")
-        except PackageNotFoundError:
+        except FileNotFoundError:
             logging.error("Could not determine current Hippius version. Ensure package is installed correctly.")
             return
 
