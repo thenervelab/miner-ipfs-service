@@ -12,6 +12,8 @@ import ipfs_utils
 import substrate_interface
 import config_manager # Import the whole module to access its pre-defined config variables
 from ipfs_peers import PeersConnector
+from version_checker import check_for_updates
+
 
 # Configuration values are now accessed via config_manager.VARIABLE_NAME
 # POLLING_INTERVAL_SECONDS = int(os.environ.get("POLLING_INTERVAL_SECONDS", 60))
