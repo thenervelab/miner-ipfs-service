@@ -438,6 +438,8 @@ if __name__ == "__main__":
         await db_manager.initialize_database()
         logging.info("Database initialized.")
 
+        await check_for_updates()
+
         # --- Aggressive Startup Cleanup & Pinning ---
         logging.info("Starting aggressive IPFS cleanup and initial pin setup...")
         initial_profile_doc_cid = None # Define here to ensure it's in scope for handle_profile_update
