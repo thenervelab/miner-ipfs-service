@@ -151,41 +151,41 @@ class PeersConnector:
         else:
             print("No IPFS Node IDs found")
 
-async def run(self):
-    """Main loop to monitor blocks and query storage at intervals."""
-    await self.connect()
-    
-    while True:
-        try:
-            # Get current block
-            current_block = self.substrate.get_block()
-            current_block_number = current_block['header']['number']
-            current_block_hash = self.substrate.get_block_hash(current_block_number)
-            print("current_block_hash:  ", current_block_hash)
-            # Initialize last_processed_block to the nearest previous interval
-            if self.last_processed_block is None:
-                self.last_processed_block = current_block_number - (current_block_number % self.block_interval)
-            
-            # Check if it's time to process a new block
-            if current_block_number >= self.last_processed_block + self.block_interval:
-                target_block = self.last_processed_block + self.block_interval
-                target_block_hash = self.substrate.get_block_hash(target_block)
+    async def run(self):
+        """Main loop to monitor blocks and query storage at intervals."""
+        await self.connect()
+        
+        while True:
+            try:
+                # Get current block
+                current_block = self.substrate.get_block()
+                current_block_number = current_block['header']['number']
+                current_block_hash = self.substrate.get_block_hash(current_block_number)
+                print("current_block_hash:  ", current_block_hash)
+                # Initialize last_processed_block to the nearest previous interval
+                if self.last_processed_block is None:
+                    self.last_processed_block = current_block_number - (current_block_number % self.block_interval)
                 
-                if target_block_hash:
-                    print("processing block....")
-                    await self.process_block(target_block, target_block_hash)
-                    self.last_processed_block = target_block
-                else:
-                    print(f"Could not get hash for block {target_block}")
-            
-            await asyncio.sleep(6)  # Wait approximately one block time (6 seconds)
-            
-        except BrokenPipeError as e:
-            print(f"Broken pipe error in PeersConnector run: {e}. Reconnecting...")
-            await self.connect()  # Reconnect to the Substrate node
-        except Exception as e:
-            print(f"Error in main loop: {e}")
-            await asyncio.sleep(10)  # Wait before retrying
+                # Check if it's time to process a new block
+                if current_block_number >= self.last_processed_block + self.block_interval:
+                    target_block = self.last_processed_block + self.block_interval
+                    target_block_hash = self.substrate.get_block_hash(target_block)
+                    
+                    if target_block_hash:
+                        print("processing block....")
+                        await self.process_block(target_block, target_block_hash)
+                        self.last_processed_block = target_block
+                    else:
+                        print(f"Could not get hash for block {target_block}")
+                
+                await asyncio.sleep(6)  # Wait approximately one block time (6 seconds)
+                
+            except BrokenPipeError as e:
+                print(f"Broken pipe error in PeersConnector run: {e}. Reconnecting...")
+                await self.connect()  # Reconnect to the Substrate node
+            except Exception as e:
+                print(f"Error in main loop: {e}")
+                await asyncio.sleep(10)  # Wait before retrying
 
 async def main():
     """Entry point for the application."""

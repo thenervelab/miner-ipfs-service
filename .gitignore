@@ -102,6 +102,9 @@ ENV/
 env.bak/
 venv.bak/
 
+miner_data.db
+./miner_data.db
+
 # Spyder project settings
 .spyderproject
 .spyproject
