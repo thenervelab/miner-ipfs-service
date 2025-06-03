@@ -97,17 +97,13 @@ class PeersConnector:
         """
         connect_url = f"{self.ipfs_api_url}/api/v0/swarm/connect"
         params = {"arg": f"/p2p/{peer_id}"}
-        
+
         try:
             async with session.post(connect_url, params=params, timeout=self.connect_timeout) as response:
                 result = await response.json()
-                
-                # Successful connection
-                if isinstance(result, dict) and "Strings" in result and any("success" in s for s in result["Strings"]):
-                    return {"success": f"connect {peer_id} success", "result": result}
-                
-                # Routing not found error (common in IPFS)
-                if isinstance(result, dict) and "Message" in result and "routing: not found" in result["Message"]:
+
+                # Handle remote-side error (issue with the peer or IPFS network, not the user's setup)
+                if "error" in result:
                     return {
                         "status": "remote_error",
                         "peer": peer_id,

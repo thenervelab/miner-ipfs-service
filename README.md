@@ -259,3 +259,33 @@ For a more automated approach to updating the version string in `__version__.py`
     git push --follow-tags
     ```
 This strategy helps keep versioning consistent and tied to your Git history. 
+
+
+The service can be run as a Docker container for easier deployment:
+
+# Build the Docker image:
+
+```bash
+docker build -t miner-ipfs-service .
+```
+
+## Run the container:
+
+```bash
+docker run --rm -it --network host miner-ipfs-service
+```
+
+### Important notes for Docker usage:
+
+The --network host flag is used to allow the container to access your local IPFS daemon and Substrate node
+
+Ensure your IPFS daemon and Substrate node are running on the host machine
+
+Configuration can be passed via environment variables or by mounting a custom config.ini:
+
+```bash
+docker run --rm -it --network host \
+  -e SUBSTRATE_NODE_URL=ws://your-node-url:9944 \
+  -e IPFS_API_HOST=your-ipfs-host \
+  miner-ipfs-service
+```
