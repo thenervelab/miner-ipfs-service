@@ -7,6 +7,7 @@ import binascii
 from .config_manager import SUBSTRATE_NODE_URL
 import asyncio
 import time
+
 # Configuration
 # SUBSTRATE_NODE_URL_DEV = "wss://rpc.hippius.network" # Old way
 # SUBSTRATE_NODE_URL_PROD = "ws://127.0.0.1:9944" # Old way

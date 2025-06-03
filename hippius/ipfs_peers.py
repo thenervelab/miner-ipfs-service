@@ -98,7 +98,7 @@ class PeersConnector:
         """
         connect_url = f"{self.ipfs_api_url}/api/v0/swarm/connect"
         params = {"arg": f"/p2p/{peer_id}"}
-        
+
         try:
             async with session.post(
                 connect_url, params=params, timeout=self.connect_timeout
