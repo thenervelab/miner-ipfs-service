@@ -291,81 +291,6 @@ async def get_current_block_number() -> int | None:
     return block_number
 
 
-async def main_test_substrate():
-    logging.basicConfig(
-        level=config_manager.LOG_LEVEL.upper(),
-        format="%(asctime)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s",
-    )
-    test_ipfs_node_id = "12D3KooWACs48y3S1cCAwiqCQ2QZ1koEHfQToiX63mb945YiWFse"
-
-    logging.info(
-        f"Attempting direct fetch for profile CID for IPFS node: {test_ipfs_node_id}"
-    )
-    profile_cid = await get_miner_profile_cid(test_ipfs_node_id)
-    if profile_cid:
-        logging.info(f"Direct fetch - Profile CID: {profile_cid}")
-    else:
-        logging.error(
-            f"Direct fetch - Failed to get profile CID for {test_ipfs_node_id}."
-        )
-
-    # ... (removed subscription test parts, kept decode tests) ...
-    hex_of_utf8_cid = "0x516d5568443771523731436f5269356d733478503145366d44316b59773279636e586f4d763273543871394e434d"
-    logging.info(
-        f"Testing decode_hex_bytes_to_cid_string with hex of UTF-8 CID: {hex_of_utf8_cid}"
-    )
-    decoded_cid1 = decode_hex_bytes_to_cid_string(hex_of_utf8_cid)
-    logging.info(f"Decoded CID (from hex of UTF-8): {decoded_cid1}")
-    assert decoded_cid1 == "QmUhD7qR71CoRi5ms4xP1E6mD1kYw2ycnXoMv2sT8q9NCM"
-
-    base16_cidv1 = (
-        "f017012202c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
-    )
-    logging.info(
-        f"Testing decode_hex_bytes_to_cid_string with base16 CIDv1: {base16_cidv1}"
-    )
-    decoded_cid2 = decode_hex_bytes_to_cid_string(base16_cidv1)
-    logging.info(f"Decoded CID (from base16 input): {decoded_cid2}")
-    assert decoded_cid2 == base16_cidv1
-
-    direct_cid_str = "QmXgZAUc4pB89nNjV8x7h6X1YsvCnKqjGscHpYPSUxQUY4"
-    logging.info(
-        f"Testing decode_hex_bytes_to_cid_string with direct base58 CID: {direct_cid_str}"
-    )
-    decoded_cid3 = decode_hex_bytes_to_cid_string(direct_cid_str)
-    logging.info(f"Decoded CID (from direct base58 input): {decoded_cid3}")
-    assert decoded_cid3 == direct_cid_str
-
-    invalid_hex = "0xThisIsNotHex"
-    logging.info(
-        f"Testing decode_hex_bytes_to_cid_string with invalid hex: {invalid_hex}"
-    )
-    decoded_cid4 = decode_hex_bytes_to_cid_string(invalid_hex)
-    logging.info(f"Decoded CID (from invalid hex): {decoded_cid4}")
-    assert decoded_cid4 is None
-
-    non_utf8_hex = "0xfffe"
-    logging.info(
-        f"Testing decode_hex_bytes_to_cid_string with non-UTF8 hex: {non_utf8_hex}"
-    )
-    decoded_cid5 = decode_hex_bytes_to_cid_string(non_utf8_hex)
-    logging.info(f"Decoded CID (from non-UTF8 hex): {decoded_cid5}")
-    assert (
-        decoded_cid5 is None
-    )  # Should be None as it's not a valid CID pattern after failing decode
-
-    logging.info(
-        "Substrate interface test cases for decode_hex_bytes_to_cid_string finished."
-    )
-
-    logging.info("Attempting to fetch current block number...")
-    current_block = await get_current_block_number()
-    if current_block is not None:
-        logging.info(f"Current chain block number: {current_block}")
-    else:
-        logging.error("Failed to fetch current block number in test.")
-
-
 # In substrate_interface.py (or wherever substrate_interface is defined)
 async def reconnect():
     global substrate
@@ -381,6 +306,3 @@ async def reconnect():
             logging.error(f"Reconnection failed: {e}")
             await asyncio.sleep(5)
 
-
-if __name__ == "__main__":
-    asyncio.run(main_test_substrate())

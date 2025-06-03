@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+./hippius/__pycache__/
+./hippius/config.ini
+./hippius/miner_data.db
 
 # C extensions
 *.so
