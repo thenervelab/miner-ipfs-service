@@ -628,7 +628,7 @@ if __name__ == "__main__":
     # You can customize field styles, level styles, etc.
     coloredlogs.install(
         level=numeric_level,
-        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(module)s:%(lineno)d)",
+        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         # Example: custom colors for levels
         # level_styles={'debug': {'color': 'green'}, 'info': {'color': 'blue'}, ...}
     )

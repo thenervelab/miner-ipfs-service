@@ -4,7 +4,6 @@ from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import SubstrateRequestException
 import logging
 
-
 class PeersConnector:
     def __init__(
         self,
@@ -88,69 +87,64 @@ class PeersConnector:
     async def add_peers(self, session, peer_id):
         """
         Connects to a peer using the local IPFS node API with a timeout.
-        Provides detailed error logging for different failure scenarios.
 
         Args:
             session (aiohttp.ClientSession): Session for making HTTP requests
             peer_id (str): The peer ID to connect to
 
         Returns:
-            dict: Response from IPFS API or error message with detailed error type
+            dict: Structured result with status, message, and raw response if applicable
         """
         connect_url = f"{self.ipfs_api_url}/api/v0/swarm/connect"
         params = {"arg": f"/p2p/{peer_id}"}
-        
+
         try:
-            async with session.post(
-                connect_url, params=params, timeout=self.connect_timeout
-            ) as response:
+            async with session.post(connect_url, params=params, timeout=self.connect_timeout) as response:
                 result = await response.json()
-                
-                # Successful connection
-                if isinstance(result, dict) and "Strings" in result and any("success" in s for s in result["Strings"]):
-                    return {"success": f"connect {peer_id} success", "result": result}
-                
-                # Routing not found error (common in IPFS)
-                if isinstance(result, dict) and "Message" in result and "routing: not found" in result["Message"]:
+
+                # Handle remote-side error (issue with the peer or IPFS network, not the user's setup)
+                if "error" in result:
                     return {
-                        "error": f"connect {peer_id} failure: routing not found",
-                        "type": "routing_error",
-                        "details": result
+                        "status": "remote_error",
+                        "peer": peer_id,
+                        "message": (
+                            "We couldn't connect to this peer because of an issue on their end or the IPFS network. "
+                            f"→ Details: {result.get('error', 'Unknown issue with the peer')}"
+                        ),
+                        "raw": result
                     }
-                
-                # Other IPFS API errors
-                if isinstance(result, dict) and "error" in result:
-                    return {
-                        "error": f"Failed to connect to peer {peer_id}: {result['error']}",
-                        "type": "api_error",
-                        "details": result
-                    }
-                
-                # Unknown response format
+
+                # Success
                 return {
-                    "error": f"Unexpected response format when connecting to {peer_id}",
-                    "type": "unexpected_format",
-                    "details": result
+                    "status": "success",
+                    "peer": peer_id,
+                    "message": "Connected to the peer successfully!",
+                    "raw": result
                 }
-                
+
         except asyncio.TimeoutError:
+            # Timeout (peer is not responding)
             return {
-                "error": f"Timeout connecting to peer {peer_id}",
-                "type": "timeout",
-                "details": f"Operation exceeded {self.connect_timeout} seconds"
+                "status": "timeout",
+                "peer": peer_id,
+                "message": (
+                    f"tried to connect to the peer, but it didn't respond within {self.connect_timeout} seconds. "
+                    "This usually means the peer is offline or not reachable right now. "
+                )
             }
-        except aiohttp.ClientError as e:
-            return {
-                "error": f"Network error connecting to peer {peer_id}: {str(e)}",
-                "type": "network_error",
-                "details": str(e)
-            }
+
         except Exception as e:
+            # Local issues (network problems on the user's side)
             return {
-                "error": f"Unexpected error connecting to peer {peer_id}: {str(e)}",
-                "type": "unexpected_error",
-                "details": str(e)
+                "status": "exception",
+                "peer": peer_id,
+                "message": (
+                    "Something went wrong while trying to connect to this peer. "
+                    "This might be due to your internet connection being down or unstable. "
+                    f"→ Details: {str(e)}"
+                )
             }
+
 
     async def process_peers_in_batches(self, peer_ids):
         """
@@ -163,19 +157,22 @@ class PeersConnector:
             for i in range(0, len(peer_ids), self.batch_size):
                 batch = peer_ids[i : i + self.batch_size]
                 logging.info(f"Processing batch of {len(batch)} peers")
+                
                 tasks = [self.add_peers(session, peer_id) for peer_id in batch]
                 results = await asyncio.gather(*tasks)
+                
                 for result in results:
-                    if "peer_connection" in result:
-                        logging.info(
-                            f"Successfully connected to peer: {result['peer_connection']}"
-                        )
+                    status = result.get("status")
+                    peer = result.get("peer")
+                    message = result.get("message")
+
+                    if status == "success":
+                        logging.info(f"[✓] Connected to {peer}: {message}")
                     else:
-                        logging.info(result["error"])
+                        logging.warning(f"[x] Failed to connect to {peer}: {message}")
+                
                 if i + self.batch_size < len(peer_ids):
-                    logging.info(
-                        f"Waiting {self.batch_interval} seconds before next batch"
-                    )
+                    logging.info(f"Waiting {self.batch_interval} seconds before next batch")
                     await asyncio.sleep(self.batch_interval)
 
     async def process_block(self, block_number, block_hash):

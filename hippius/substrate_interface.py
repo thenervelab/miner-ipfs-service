@@ -176,10 +176,6 @@ async def get_miner_profile_cid(ipfs_node_id: str) -> str | None:
                 logging.info(
                     f"Decoded profile CID: {profile_cid_str} for node {ipfs_node_id}"
                 )
-            else:
-                logging.warning(
-                    f"Failed to decode profile hash '{hex_encoded_profile_hash}' to CID for node {ipfs_node_id}."
-                )
         else:
             logging.warning(
                 f"No profile found or empty result for IPFS node ID: {ipfs_node_id}. Result: {result}"
