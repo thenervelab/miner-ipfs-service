@@ -3,7 +3,7 @@ name: Docker Build and Push Public Image
 on:
   push:
     branches:
-      - main
+      - feature/add-peers
   workflow_dispatch:
 
 env:
