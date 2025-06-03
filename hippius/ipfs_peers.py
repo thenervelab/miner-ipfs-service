@@ -4,6 +4,7 @@ from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import SubstrateRequestException
 import logging
 
+
 class PeersConnector:
     def __init__(
         self,
@@ -97,9 +98,11 @@ class PeersConnector:
         """
         connect_url = f"{self.ipfs_api_url}/api/v0/swarm/connect"
         params = {"arg": f"/p2p/{peer_id}"}
-
+        
         try:
-            async with session.post(connect_url, params=params, timeout=self.connect_timeout) as response:
+            async with session.post(
+                connect_url, params=params, timeout=self.connect_timeout
+            ) as response:
                 result = await response.json()
 
                 # Handle remote-side error (issue with the peer or IPFS network, not the user's setup)
@@ -111,7 +114,7 @@ class PeersConnector:
                             "We couldn't connect to this peer because of an issue on their end or the IPFS network. "
                             f"→ Details: {result.get('error', 'Unknown issue with the peer')}"
                         ),
-                        "raw": result
+                        "raw": result,
                     }
 
                 # Success
@@ -119,7 +122,7 @@ class PeersConnector:
                     "status": "success",
                     "peer": peer_id,
                     "message": "Connected to the peer successfully!",
-                    "raw": result
+                    "raw": result,
                 }
 
         except asyncio.TimeoutError:
@@ -130,7 +133,7 @@ class PeersConnector:
                 "message": (
                     f"tried to connect to the peer, but it didn't respond within {self.connect_timeout} seconds. "
                     "This usually means the peer is offline or not reachable right now. "
-                )
+                ),
             }
 
         except Exception as e:
@@ -142,9 +145,8 @@ class PeersConnector:
                     "Something went wrong while trying to connect to this peer. "
                     "This might be due to your internet connection being down or unstable. "
                     f"→ Details: {str(e)}"
-                )
+                ),
             }
-
 
     async def process_peers_in_batches(self, peer_ids):
         """
@@ -157,10 +159,10 @@ class PeersConnector:
             for i in range(0, len(peer_ids), self.batch_size):
                 batch = peer_ids[i : i + self.batch_size]
                 logging.info(f"Processing batch of {len(batch)} peers")
-                
+
                 tasks = [self.add_peers(session, peer_id) for peer_id in batch]
                 results = await asyncio.gather(*tasks)
-                
+
                 for result in results:
                     status = result.get("status")
                     peer = result.get("peer")
@@ -170,9 +172,11 @@ class PeersConnector:
                         logging.info(f"[✓] Connected to {peer}: {message}")
                     else:
                         logging.warning(f"[x] Failed to connect to {peer}: {message}")
-                
+
                 if i + self.batch_size < len(peer_ids):
-                    logging.info(f"Waiting {self.batch_interval} seconds before next batch")
+                    logging.info(
+                        f"Waiting {self.batch_interval} seconds before next batch"
+                    )
                     await asyncio.sleep(self.batch_interval)
 
     async def process_block(self, block_number, block_hash):
